@@ -6,16 +6,20 @@ using UnityEngine;
 
 public class Hacker : MonoBehaviour
 {
-    private static int wrongCount = 0;
-    private static int correctAnswerCount = 0;
-    enum Screen {IntroScreen, BriefingScreen, GameScreen, WinScreen, TimeoutScreen};
+    // Game data
+    private int wrongCount = 0;
+    private int correctAnswerCount = 0;
+    private static string[] easyWords = new string[]{ "terminal", "killer", "fox", "thread", "quiet", "twin", "hostile", "diamond", "blast", "war" };
+    private static string[] intermediateWords = new string[]{ "infrastructure", "established", "battlefield", "interactive", "discriminate", "continental", "mother base", "genetic engineering", "responsibility", "headquarters" };
+    private static string[] difficultWords = new string[]{ "Talk the Talk", "Metal Gear", "Tough It Out", "Go Out On a Limb", "Keep Your Eyes Peeled", "Control History", "No Hero", "Snake Eater", "War Has Changed", "Play Me Like A fDamn Fiddle" };
+    private static string correctWord;
+
+    // Game config
+    enum Screen {IntroScreen, BriefingScreen, GameScreen, WinScreen, TimeoutScreen, CheckAnswer, GameOverScreen};
     enum Level {Easy, Intermediate, Difficult};
     Screen currentScreen = Screen.IntroScreen;
     Level currentLevel = Level.Easy;
     private static Timer timer = new System.Timers.Timer(600000);   // 10-minute timer
-    private static string[] easyWords = { "sample1", "sample2", "sample3", "sample4", "sample5" };
-    private static string[] intermediateWords = { "", "", "", "", "" };
-    private static string[] difficultWords = { "", "", "", "", "" };
 
     // Start is called before the first frame update
     void Start()
@@ -83,8 +87,9 @@ public class Hacker : MonoBehaviour
         } 
         else if (input.ToLower().Contains("affirmative"))
         {
-            Terminal.WriteLine("Snake: But why? What's with the 'time runs out'?");
-            Terminal.WriteLine("Otacon: I don't know, Snake. I feel like I'm being followed.");
+            Terminal.WriteLine("Snake: What's with the 'time runs out'?");
+            Terminal.WriteLine("Otacon: I don't know, Snake. Adding some spice to our conversation.");
+            Terminal.WriteLine("Snake: Hnh.");
             Terminal.WriteLine("Otacon: Let's do this.");
             currentScreen = Screen.GameScreen;
             timer.Enabled = true;
@@ -108,30 +113,60 @@ public class Hacker : MonoBehaviour
             case Level.Difficult:
                 break;
         }
+
+        currentScreen = Screen.CheckAnswer;
     }
 
     void ShowEasyLevel(string input)
     {
         System.Random rnd = new System.Random();
         // get a random word from the list
-        string correctWord = easyWords[rnd.Next(0, easyWords.Length -1)];
-        easyWords = easyWords.Where(o => o != correctWord).ToArray();
-        Terminal.WriteLine("+-------------------------+");
-        Terminal.WriteLine(StringExtension.Anagram(correctWord));
-        Terminal.WriteLine("+-------------------------+");
+        if (easyWords.Length <= 0) { 
+            currentScreen = Screen.GameOverScreen; 
+        }
+
+        if (currentScreen != Screen.GameOverScreen) {
+            correctWord = easyWords[rnd.Next(0, easyWords.Length - 1)];
+            easyWords = easyWords.Where(o => o != correctWord).ToArray();
+            Terminal.WriteLine("+-------------------------+");
+            Terminal.WriteLine(StringExtension.Anagram(correctWord));
+            Terminal.WriteLine("+-------------------------+");
+        }
+       
     }
 
     void VerifyResult(string answer)
     {
-        if (easyWords.Contains(answer))
+        if (correctWord == answer)
         {
             ++correctAnswerCount;
+
             if (correctAnswerCount > 5 && currentLevel == Level.Easy)
             {
                 currentLevel = Level.Intermediate;
                 correctAnswerCount = 0;
             }
+
+            wrongCount = 0;
+
+            Terminal.WriteLine("System: " + correctAnswerCount + " of 5 passwords unlocked.");
+        } else
+        {
+            Terminal.WriteLine("System: Incorrect input.");
+
+            wrongCount++;
+            if(wrongCount == 3)
+                Terminal.WriteLine("Otacon: Ugh. Snake.");
+            else if(wrongCount == 5)
+                Terminal.WriteLine("Otacon: Really? You can do better than that.");
+            else if(wrongCount == 7)
+                Terminal.WriteLine("Otacon: I'm done.");
+            else if(wrongCount == 10)
+                Terminal.WriteLine("Otacon: I REALLY am done, Snake.");
         }
+
+        currentScreen = Screen.GameScreen;
+        Terminal.WriteLine("Otacon: Not to put pressure on you, Snake, but you only have " + timer + " left.");
     }
 
     void OnUserInput(string input)
@@ -147,17 +182,26 @@ public class Hacker : MonoBehaviour
         } else if (currentScreen == Screen.GameScreen)
         {
             ShowGameScreen(input);
+        } else if (currentScreen == Screen.CheckAnswer)
+        {
             VerifyResult(input);
+        } else if (currentScreen == Screen.GameOverScreen)
+        {
+            GameOver();
         }
     }
 
-
-    private static void OnTimedEvent(object source, ElapsedEventArgs e)
+    void GameOver()
     {
         Terminal.ClearScreen();
         Terminal.WriteLine("Otacon: Snake. Snake?");
         Terminal.WriteLine("Ş̶͇̣̺̳̪̲̓̚Ṋ̸̡̠̝̦͓̣͈͕̪̄̍͗͒͂̕̚ͅA̶̡̡̳̠͓̬͉͑͌̌̀̏̊̿̿̑̓̕̚͝͠ͅḲ̸̔̏̈̽̄͗̉͝Ȩ̷̨̫̣͔̙͇̩͉̮̂̿̃́̍͐̑̉́́̚̚");
         Terminal.WriteLine("...");
         Terminal.WriteLine("--- Connection lost ---");
+    }
+
+    private void OnTimedEvent(object source, ElapsedEventArgs e)
+    {
+        GameOver();
     }
 }
