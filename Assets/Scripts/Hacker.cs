@@ -23,6 +23,7 @@ public class Hacker : MonoBehaviour
     private static float timeRemaining = 420;
     private static bool isTimerRunning;
     private static bool showMessage = false;
+    private static Color origColor;
 
     // Start is called before the first frame update
     void Start()
@@ -40,8 +41,10 @@ public class Hacker : MonoBehaviour
                 timeRemaining -= Time.deltaTime;
 
                 // "Technical" mishaps that look like being hacked
-                // 6 minutes - screen flickers
+                // 6 mins - screen flickers
                 // 5 mins 30 sec - screen offs for a longer time
+                // 4 mins 50 sec - random chat containing garbage
+                // 3 mins 45 sec - flood
                 switch ((int)timeRemaining)
                 {
                     case 360:
@@ -81,6 +84,19 @@ public class Hacker : MonoBehaviour
                         }
                         break;
                     case 318:
+                        showMessage = false;
+                        break;
+                    case 290:
+                        if (!showMessage)
+                        {
+                            origColor = GameObject.Find("Text").GetComponent<Text>().color;
+                            GameObject.Find("Text").GetComponent<Text>().color = Color.red;
+                            Terminal.WriteLine("SNAKE.");
+                            showMessage = true;
+                        }
+                        break;
+                    case 289:
+                        GameObject.Find("Text").GetComponent<Text>().color = origColor;
                         showMessage = false;
                         break;
                 }   
@@ -171,20 +187,23 @@ public class Hacker : MonoBehaviour
     void ShowGameScreen(string input = null)
     {
         Terminal.ClearScreen();
-        switch(currentLevel)
+        if (currentScreen == Screen.GameScreen)
         {
-            case Level.Easy:
-                ShowEasyLevel(input);
-                break;
-            case Level.Intermediate:
-                ShowIntermediateLevel(input);
-                break;
-            case Level.Difficult:
-                ShowDifficultLevel(input);
-                break;
-        }
+            switch (currentLevel)
+            {
+                case Level.Easy:
+                    ShowEasyLevel(input);
+                    break;
+                case Level.Intermediate:
+                    ShowIntermediateLevel(input);
+                    break;
+                case Level.Difficult:
+                    ShowDifficultLevel(input);
+                    break;
+            }
 
-        currentScreen = Screen.CheckAnswer;
+            currentScreen = Screen.CheckAnswer;
+        }
     }
 
     void ShowEasyLevel(string input)
@@ -196,7 +215,7 @@ public class Hacker : MonoBehaviour
         }
 
         if (currentScreen != Screen.GameOverScreen) {
-            correctWord = easyWords[rnd.Next(0, easyWords.Length - 1)];
+            correctWord = easyWords[rnd.Next(easyWords.Length)];
             easyWords = easyWords.Where(o => o != correctWord).ToArray();
             Terminal.WriteLine("+-------------------------+");
             Terminal.WriteLine(StringExtension.Anagram(correctWord));
@@ -216,7 +235,7 @@ public class Hacker : MonoBehaviour
 
         if (currentScreen != Screen.GameOverScreen)
         {
-            correctWord = intermediateWords[rnd.Next(0, intermediateWords.Length - 1)];
+            correctWord = intermediateWords[rnd.Next(intermediateWords.Length)];
             intermediateWords = intermediateWords.Where(o => o != correctWord).ToArray();
             Terminal.WriteLine("+-------------------------+");
             Terminal.WriteLine(StringExtension.Anagram(correctWord));
@@ -229,12 +248,12 @@ public class Hacker : MonoBehaviour
                 Terminal.WriteLine("Snake: You think I'm");
             }
 
-            int hint1 = rnd.Next(0, correctWord.Length - 1), hint2, hint3;
+            int hint1 = rnd.Next(correctWord.Length), hint2, hint3;
             do
             {
-                hint2 = rnd.Next(0, correctWord.Length - 1);
-                hint3 = rnd.Next(0, correctWord.Length - 1);
-            } while (hint1 == hint2 || hint2 == hint3);   // repeat randomization until all numbers are different
+                hint2 = rnd.Next(correctWord.Length);
+                hint3 = rnd.Next(correctWord.Length);
+            } while (hint1 == hint2 || hint2 == hint3 || hint1 == hint3);   // repeat randomization until all numbers are different
             
             Terminal.WriteLine("Otacon: The " + GetOrdinal(hint1) + ", " + GetOrdinal(hint2) + ", and " + GetOrdinal(hint3) + " letters are '" + correctWord[hint1] + "', '" + correctWord[hint2] + "', and '" + correctWord[hint3] + "'.");
         }
@@ -252,7 +271,7 @@ public class Hacker : MonoBehaviour
 
         if (currentScreen != Screen.GameOverScreen)
         {
-            correctWord = difficultWords[rnd.Next(0, difficultWords.Length - 1)];
+            correctWord = difficultWords[rnd.Next(difficultWords.Length)];
             difficultWords = difficultWords.Where(o => o != correctWord).ToArray();
             Terminal.WriteLine("+-------------------------+");
             Terminal.WriteLine(StringExtension.Anagram(correctWord));
@@ -267,7 +286,9 @@ public class Hacker : MonoBehaviour
             Terminal.WriteLine("Otacon: I didn't mean to- It's not that you're- I-");
             Terminal.WriteLine("Snake: Hnh.");
         }
-        int hint1 = rnd.Next(0, correctWord.Split(' ').Length - 1);
+
+        int hint1 = rnd.Next(correctWord.Split(' ').Length);
+        Terminal.WriteLine("Otacon: " + GetOrdinal(hint1) + " word is " + correctWord.Split(' ')[hint1] + ".");
     }
 
     /**
@@ -304,8 +325,6 @@ public class Hacker : MonoBehaviour
 
                 correctAnswerCount = 0;
             }
-
-            wrongCount = 0;
         } else
         {
             Terminal.WriteLine("System: Incorrect input.");
@@ -319,10 +338,21 @@ public class Hacker : MonoBehaviour
                 Terminal.WriteLine("Otacon: I'm done.");
             else if(wrongCount == 10)
                 Terminal.WriteLine("Otacon: I REALLY am done, Snake.");
+
         }
 
-        currentScreen = Screen.GameScreen;
-        Terminal.WriteLine("Otacon: Not to put pressure on you, Snake, but you only have " + GetRemainingMinutes() + " minutes and " + GetRemainingSeconds() + " seconds left.");
+        Debug.Log("Wrong: " + wrongCount + " Correct: " + correctAnswerCount);
+
+        // If all the list was exhausted, show game over
+        if (wrongCount > 5 && wrongCount + correctAnswerCount == 10)
+        {
+            currentScreen = Screen.GameOverScreen;
+        }
+        else
+        {
+            currentScreen = Screen.GameScreen;
+            Terminal.WriteLine("Otacon: You only have " + GetRemainingMinutes() + " minutes and " + GetRemainingSeconds() + " seconds left, Snake.");
+        }
     }
 
     void OnUserInput(string input = null)
@@ -375,6 +405,9 @@ public class Hacker : MonoBehaviour
         return Mathf.FloorToInt(timeRemaining % 60).ToString();
     }
 
+    /**
+     * Transforms index to an ordinal
+     */
     private string GetOrdinal(int num)
     {
         string ordinal = (num + 1).ToString();
