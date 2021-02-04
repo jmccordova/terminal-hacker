@@ -3,15 +3,16 @@ using System.Collections.Generic;
 using System.Timers;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Hacker : MonoBehaviour
 {
     // Game data
     private int wrongCount = 0;
     private int correctAnswerCount = 0;
-    private static string[] easyWords = new string[]{ "terminal", "killer", "fox", "thread", "quiet", "twin", "hostile", "diamond", "blast", "war" };
+    private static string[] easyWords = new string[]{ "terminal", "killer", "fox", "thread", "quiet", "twin", "hostile", "diamond", "blast", "stealth" };
     private static string[] intermediateWords = new string[]{ "infrastructure", "established", "battlefield", "interactive", "discriminate", "continental", "mother base", "genetic engineering", "responsibility", "headquarters" };
-    private static string[] difficultWords = new string[]{ "Talk the Talk", "Metal Gear", "Tough It Out", "Go Out On a Limb", "Keep Your Eyes Peeled", "Control History", "No Hero", "Snake Eater", "War Has Changed", "Play Me Like A fDamn Fiddle" };
+    private static string[] difficultWords = new string[]{ "Talk the Talk", "Metal Gear", "Tough It Out", "Go Out On a Limb", "Keep Your Eyes Peeled", "Control History", "No Hero", "Snake Eater", "War Has Changed", "Play Me Like A Damn Fiddle" };
     private static string correctWord;
 
     // Game config
@@ -19,8 +20,9 @@ public class Hacker : MonoBehaviour
     enum Level {Easy, Intermediate, Difficult};
     Screen currentScreen = Screen.IntroScreen;
     Level currentLevel = Level.Easy;
-    private static float timeRemaining = 600;
+    private static float timeRemaining = 420;
     private static bool isTimerRunning;
+    private static bool showMessage = false;
 
     // Start is called before the first frame update
     void Start()
@@ -36,6 +38,52 @@ public class Hacker : MonoBehaviour
             if (timeRemaining > 0)
             {
                 timeRemaining -= Time.deltaTime;
+
+                // "Technical" mishaps that look like being hacked
+                // 6 minutes - screen flickers
+                // 5 mins 30 sec - screen offs for a longer time
+                switch ((int)timeRemaining)
+                {
+                    case 360:
+                        GameObject.Find("Text").GetComponent<Text>().enabled = false;
+                        break;
+                    case 358:
+                        GameObject.Find("Text").GetComponent<Text>().enabled = true;
+                        break;
+                    case 357:
+                        if (!showMessage)
+                        {
+                            Terminal.WriteLine("Snake: Hmm.");
+                            Terminal.WriteLine("Otacon: Something wrong?");
+                            Terminal.WriteLine("Snake: Nothing.");
+                            Terminal.WriteLine("Otacon: Oh. Ok. Get back to guessing, then.");
+                            showMessage = true;
+                        }
+                        break;
+                    case 356:
+                        showMessage = false;
+                        break;
+                    case 330:
+                        GameObject.Find("Text").GetComponent<Text>().enabled = false;
+                        break;
+                    case 320:
+                        GameObject.Find("Text").GetComponent<Text>().enabled = true;
+                        break;
+                    case 319:
+                        if (!showMessage)
+                        {
+                            Terminal.WriteLine("Otacon: SNAKEEEEEEEEE!");
+                            Terminal.WriteLine("Snake: What?");
+                            Terminal.WriteLine("Otacon: I lost you for 10 seconds! What happened?");
+                            Terminal.WriteLine("Snake: The screen went off suddenly. Are you sure the time's just for drama only?");
+                            Terminal.WriteLine("Otacon: I don't know anymore! HURRY UP!");
+                            showMessage = true;
+                        }
+                        break;
+                    case 318:
+                        showMessage = false;
+                        break;
+                }   
             } else
             {
                 isTimerRunning = false;
@@ -173,6 +221,22 @@ public class Hacker : MonoBehaviour
             Terminal.WriteLine("+-------------------------+");
             Terminal.WriteLine(StringExtension.Anagram(correctWord));
             Terminal.WriteLine("+-------------------------+");
+
+            // give three hints on the character on a random index
+            if (correctAnswerCount == 0)
+            {
+                Terminal.WriteLine("Otacon: This is going to get difficult, Snake, so starting here, I'll help you out.");
+                Terminal.WriteLine("Snake: You think I'm");
+            }
+
+            int hint1 = rnd.Next(0, correctWord.Length - 1), hint2, hint3;
+            do
+            {
+                hint2 = rnd.Next(0, correctWord.Length - 1);
+                hint3 = rnd.Next(0, correctWord.Length - 1);
+            } while (hint1 == hint2 || hint2 == hint3);   // repeat randomization until all numbers are different
+            
+            Terminal.WriteLine("Otacon: The " + GetOrdinal(hint1) + ", " + GetOrdinal(hint2) + ", and " + GetOrdinal(hint3) + " letters are '" + correctWord[hint1] + "', '" + correctWord[hint2] + "', and '" + correctWord[hint3] + "'.");
         }
 
     }
@@ -195,6 +259,15 @@ public class Hacker : MonoBehaviour
             Terminal.WriteLine("+-------------------------+");
         }
 
+        // give one hint word of a random phrase index
+        if (correctAnswerCount == 0)
+        {
+            Terminal.WriteLine("Otacon: Snake, I remember this one.");
+            Terminal.WriteLine("Snake: Harder than the last one and you'll give me clues again.");
+            Terminal.WriteLine("Otacon: I didn't mean to- It's not that you're- I-");
+            Terminal.WriteLine("Snake: Hnh.");
+        }
+        int hint1 = rnd.Next(0, correctWord.Split(' ').Length - 1);
     }
 
     /**
@@ -252,9 +325,10 @@ public class Hacker : MonoBehaviour
         Terminal.WriteLine("Otacon: Not to put pressure on you, Snake, but you only have " + GetRemainingMinutes() + " minutes and " + GetRemainingSeconds() + " seconds left.");
     }
 
-    void OnUserInput(string input)
+    void OnUserInput(string input = null)
     {
         if(input.Length > 0) Terminal.WriteLine("Snake: " + input);
+
         if (currentScreen == Screen.IntroScreen)
         {
             ShowIntro(input);
@@ -299,5 +373,38 @@ public class Hacker : MonoBehaviour
     private static string GetRemainingSeconds()
     {
         return Mathf.FloorToInt(timeRemaining % 60).ToString();
+    }
+
+    private string GetOrdinal(int num)
+    {
+        string ordinal = (num + 1).ToString();
+
+        switch ((num + 1) % 100)
+        {
+            case 11:
+            case 12:
+            case 13:
+                ordinal += "th";
+                break;
+            default:
+                switch ((num + 1) % 10)
+                {
+                    case 1:
+                        ordinal += "st";
+                        break;
+                    case 2:
+                        ordinal += "nd";
+                        break;
+                    case 3:
+                        ordinal += "rd";
+                        break;
+                    default:
+                        ordinal += "th";
+                        break;
+                }
+                break;
+        }
+
+        return ordinal;
     }
 }
