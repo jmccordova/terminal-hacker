@@ -27,6 +27,7 @@ public class Hacker : MonoBehaviour
     private static Color origColor;
     private static GameObject monitorScreen;
     private static GameObject codecScreen;
+    private static Text screenText;
 
 
     // Start is called before the first frame update
@@ -34,6 +35,7 @@ public class Hacker : MonoBehaviour
     {
         monitorScreen = GameObject.Find("WM2000");
         codecScreen = GameObject.Find("FinaleVideo");
+        screenText = GameObject.Find("Text").GetComponent<Text>();
         ShowMainMenu();
     }
 
@@ -53,16 +55,17 @@ public class Hacker : MonoBehaviour
                 // 3 mins 45 sec - flood
 
                 int t = (int)timeRemaining;
-
-                if(t <= 360 && t <= 356)    // Turn off screen at 6:00 mark
+                
+                if(t <= 360 && t >= 356)    // Turn off screen at 6:00 mark
                 {
                     switch(t)
                     {
                         case 360:
-                            GameObject.Find("Text").GetComponent<Text>().enabled = false;
+                            Debug.Log("Should be off");
+                            screenText.enabled = false;
                             break;
                         case 358:
-                            GameObject.Find("Text").GetComponent<Text>().enabled = true;
+                            screenText.enabled = true;
                             break;
                         case 357:
                             if (!showMessage)
@@ -78,15 +81,15 @@ public class Hacker : MonoBehaviour
                             showMessage = false;
                             break;
                     }
-                } else if (t <= 330 && t <= 318)    // Turn off screen at 5:30 mark
+                } else if (t <= 330 && t >= 318)    // Turn off screen at 5:30 mark
                 {
                     switch (t)
                     {
                         case 330:
-                            GameObject.Find("Text").GetComponent<Text>().enabled = false;
+                            screenText.enabled = false;
                             break;
                         case 320:
-                            GameObject.Find("Text").GetComponent<Text>().enabled = true;
+                            screenText.enabled = true;
                             break;
                         case 319:
                             if (!showMessage)
@@ -102,13 +105,13 @@ public class Hacker : MonoBehaviour
                             showMessage = false;
                             break;
                     }
-                } else if (t <= 290 && t <= 280)    // Color the text red at 4:50 mark
+                } else if (t <= 290 && t >= 280)    // Color the text red at 4:50 mark
                 {
                     switch(t)
                     {
                         case 290:
-                            origColor = GameObject.Find("Text").GetComponent<Text>().color;
-                            GameObject.Find("Text").GetComponent<Text>().color = Color.red;
+                            origColor = screenText.color;
+                            screenText.color = Color.red;
                             if (!showMessage)
                             {
                                 Terminal.WriteLine("SNAKE.");
@@ -116,13 +119,13 @@ public class Hacker : MonoBehaviour
                             }
                             break;
                         case 280:
-                            GameObject.Find("Text").GetComponent<Text>().color = origColor;
+                            screenText.color = origColor;
                             showMessage = false;
                             break;
                     }
-                } else if (t <= 120 && t <= 115)
+                } else if (t <= 120 && t >= 115)    // Flood message at 2:00
                 {
-                    GameObject.Find("Text").GetComponent<Text>().color = Color.red;
+                    screenText.color = Color.red;
                     switch (t)
                     {
                         case 120:
@@ -141,6 +144,9 @@ public class Hacker : MonoBehaviour
                             Terminal.WriteLine("S N A K E");
                             break;
                     }
+                } else if (t <= 60 && t >= 10)
+                {
+                    screenText.fontSize = t;
                 }
             } else
             {
